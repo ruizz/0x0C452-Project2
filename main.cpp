@@ -85,7 +85,10 @@ void Drawing::draw()
 	//fl_arc(100, 100, 200, 200, 0, 360);
 	//fl_pie(0,0,200,200,0,360);
 
-	fl_pie(BX+arms->lines[3]->x2-5, BY-arms->lines[3]->y2-5, 10, 10, 0, 360);
+	if(painting)
+		fl_pie(BX+arms->lines[3]->x2-10, BY-arms->lines[3]->y2-10, 20, 20, 0, 360);
+	else
+		fl_pie(BX+arms->lines[3]->x2-5, BY-arms->lines[3]->y2-5, 10, 10, 0, 360);
 
 	
 	fl_end_line();
@@ -197,7 +200,43 @@ public:
 		fl_pie(x1, y1, 30, 30, 0, 360);
 	}
 };
+double inRange(double x)
+{
+	while(x>PI)
+	{
+		x -= 2*PI;
+	}
+	while(x<-PI)
+	{
+		x += 2*PI;
+	}
+	return x;
 
+}
+bool turnCCW(double theta0, double theta)
+{
+	theta0 = inRange(theta0);
+	theta = inRange(theta);
+	printf("Recieved %f %f\n", theta0*180/PI, theta*180/PI);
+	if((theta0<0 && theta>0) || (theta0>0 && theta<0))
+	{
+		double the1 = abs(theta0 - theta);
+		double the2 = (abs(inRange(PI-theta0)) + abs(inRange(PI-theta)));
+		printf("THes %f %f\n", the1*180/PI, the2*180/PI);
+		if(the2>the1)
+			return (theta0>0 && theta<0);
+		else
+			return (theta0<0 && theta>0);
+
+	}
+	else
+	{
+		if(theta0>theta)
+			return true;
+		else
+			return false;
+	}
+}
 Pos* Line::rot(double deg, double x_axis, double y_axis)
 {
 	Matrix* mat = new Matrix(4,1);
@@ -437,12 +476,13 @@ void Lines::movetoPt(double x, double y)
 	}
 	else if(pow(x-lines[1]->x2, 2) + pow(y-lines[1]->y2, 2) < pow((double)(L1-L2), 2))	//checking inner circle
 	{
-		double theta0 = acos((x)/(sqrt(pow(x,2) + pow(y,2))));
+		//double theta0 = acos((x)/(sqrt(pow(x,2) + pow(y,2))));
+		double theta0 = acos((x-lines[1]->x1)/(sqrt(pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2))));
 		//double theta1 = asin((sqrt(pow((double)(L1-L2),2) - (pow(x-lines[0]->x2,2) + pow(y-lines[0]->y2,2))))/((double)(L1)));
 		double theta1 = acos((pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2)+pow((double)(L0),2)-pow((double)(L1-L2),2))/(2*L0*sqrt(pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2))));
 		double theta = acos((lines[1]->x2-lines[1]->x1)/L0);
 
-		//printf("AAA1 %f %f %f\n", theta0*180/PI, theta1*180/PI, theta*180/PI);
+		//printf("AAA0 %f %f %f\n", theta0*180/PI, theta1*180/PI, theta*180/PI);
 		if(y<lines[1]->y1)
 		{
 			theta0 = -theta0;	//-acos((x-lines[1]->x1)/(sqrt(pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2))));
@@ -454,11 +494,13 @@ void Lines::movetoPt(double x, double y)
 		}
 		if(theta0 > theta)
 		{
-			rotate(-theta1*180/PI, 0);
+			//printf("CW\n");
+			rotate((theta0-theta1-theta)*180/PI, 0);
 		}
 		else
 		{
-			rotate(theta1*180/PI, 0);
+			//printf("CCW\n");
+			rotate((theta0+theta1-theta)*180/PI, 0);
 		}
 
 	}
@@ -481,20 +523,29 @@ void Lines::movetoPt(double x, double y)
 		{
 			theta = -theta;
 		}
+		if(theta0 < 0)
+			theta0 += 2*PI;
+
 		//printf("distance %f\n", sqrt(pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2)));
 		//printf("%f\n", (pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2)+pow((double)L1,2)-pow((double)L2,2)));
 		//printf("%f %f %f\n", x-lines[1]->x1, y-lines[1]->y1, 2*L1*sqrt(pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2)));
 		//printf("%f\n", (pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2)+pow((double)L1,2)-pow((double)L2,2))/(2*L1*sqrt(pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2))));
 		//printf("%f\n", acos(1.000000));
 		//printf("AAA1 %f %f %f\n", theta0*180/PI, theta1*180/PI, theta*180/PI);
-		if(theta0>theta)
+		
+		//if(theta0>theta && (theta0 <= PI))
+		if(turnCCW(theta0, theta))
 		{
+
+			//printf("CCW\n");
 			rotate((theta0-theta1-theta)*180/PI, 1);
 		}
 		else
 		{
+			//printf("CW\n");
 			rotate((theta0+theta1-theta)*180/PI, 1);
 		}
+
 	}
 	//double theta0 = acos((x-lines[1]->x1)/(sqrt(pow(x-lines[1]->x1,2) + pow(y-lines[1]->y1,2))));
 	//double theta = acos((lines[1]->x2 - lines[1]->x1)/L1);
@@ -571,8 +622,25 @@ void j3_cl_callback(Fl_Widget*, void* v) {
 	//arms->movetoPt(0,140);
 }
 
+void x_plus_callback(Fl_Widget*, void* v) {
+	arms->movetoPt(arms->lines[3]->x2+1,arms->lines[3]->y2);
+}
+
+void x_minus_callback(Fl_Widget*, void* v) {
+	arms->movetoPt(arms->lines[3]->x2-1,arms->lines[3]->y2);
+}
+
+void y_plus_callback(Fl_Widget*, void* v) {
+	arms->movetoPt(arms->lines[3]->x2,arms->lines[3]->y2+1);
+}
+
+void y_minus_callback(Fl_Widget*, void* v) {
+	arms->movetoPt(arms->lines[3]->x2,arms->lines[3]->y2-1);
+}
+
 void paint_callback(Fl_Widget*, void* v) {
 	painting = !painting;
+
 	if(painting){
 		printf("Begin painting\n");
 
@@ -580,6 +648,8 @@ void paint_callback(Fl_Widget*, void* v) {
 	if(!painting){
 		printf("End painting\n");
 	}
+	Fl::redraw();
+	Fl::check();
 }
 
 int main(int argc, char **argv) {
@@ -606,26 +676,40 @@ int main(int argc, char **argv) {
 
 	
 
-	Fl_Box joint1_txt(215, 550, 30, 15, "Joint 1");
-	Fl_Button j1_cc(150, 570, 60, 30, "-");
-	Fl_Button j1_cl(250, 570, 60, 30, "+");
+	Fl_Box joint1_txt(80, 550, 30, 15, "Joint 1");
+	Fl_Button j1_cc(50, 570, 50, 30, "-");
+	Fl_Button j1_cl(100, 570, 50, 30, "+");
 
 	j1_cc.callback(j1_cc_callback, NULL);
 	j1_cl.callback(j1_cl_callback, NULL);
 	
-	Fl_Box joint2_txt(460, 550, 30, 15, "Joint 2");
-	Fl_Button j2_cc(395, 570, 60, 30, "-");
-	Fl_Button j2_cl(495, 570, 60, 30, "+");
+	Fl_Box joint2_txt(200, 550, 30, 15, "Joint 2");
+	Fl_Button j2_cc(170, 570, 50, 30, "-");
+	Fl_Button j2_cl(220, 570, 50, 30, "+");
 
 	j2_cc.callback(j2_cc_callback, NULL);
 	j2_cl.callback(j2_cl_callback, NULL);
 
-	Fl_Box joint3_txt(705, 550, 30, 15, "Joint 3");
-	Fl_Button j3_cc(640, 570, 60, 30, "-");
-	Fl_Button j3_cl(740, 570, 60, 30, "+");
+	Fl_Box joint3_txt(320, 550, 30, 15, "Joint 3");
+	Fl_Button j3_cc(290, 570, 50, 30, "-");
+	Fl_Button j3_cl(340, 570, 50, 30, "+");
 
 	j3_cc.callback(j3_cc_callback, NULL);
 	j3_cl.callback(j3_cl_callback, NULL);
+
+	Fl_Box X_txt(440, 550, 30, 15, "X");
+	Fl_Button x_minus(410, 570, 50, 30, "-");
+	Fl_Button x_plus(460, 570, 50, 30, "+");
+
+	x_plus.callback(x_plus_callback, NULL);
+	x_minus.callback(x_minus_callback, NULL);
+
+	Fl_Box Y_txt(560, 550, 30, 15, "Y");
+	Fl_Button y_minus(530, 570, 50, 30, "-");
+	Fl_Button y_plus(580, 570, 50, 30, "+");
+
+	y_plus.callback(y_plus_callback, NULL);
+	y_minus.callback(y_minus_callback, NULL);
 
 	Fl_Button paint(445, 610, 60, 30, "Paint");
 
@@ -636,7 +720,7 @@ int main(int argc, char **argv) {
 	joint1_txt.show();
 	joint2_txt.show();
 	joint3_txt.show();
-
+	
 	j1_cc.show();
 	j1_cl.show();
 
