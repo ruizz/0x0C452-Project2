@@ -4,6 +4,7 @@
 #include <FL/fl_draw.H>
 #include <FL/Fl_Widget.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_PNG_Image.H>
 #include <../rotation.h>
 #include <vector>
 
@@ -118,7 +119,7 @@ public:
 		int h1 = h();
 		int x1 = x();
 		int y1 = y();
-		fl_rectf(x1, y1, w1, h1);
+		//fl_rectf(x1, y1, w1, h1);
 	}
 	int handle(int event)
 	{
@@ -200,6 +201,7 @@ public:
 		fl_pie(x1, y1, 30, 30, 0, 360);
 	}
 };
+
 double inRange(double x)
 {
 	while(x>PI)
@@ -213,6 +215,7 @@ double inRange(double x)
 	return x;
 
 }
+
 bool turnCCW(double theta0, double theta)
 {
 	theta0 = inRange(theta0);
@@ -237,6 +240,7 @@ bool turnCCW(double theta0, double theta)
 			return false;
 	}
 }
+
 Pos* Line::rot(double deg, double x_axis, double y_axis)
 {
 	Matrix* mat = new Matrix(4,1);
@@ -298,6 +302,7 @@ Pos* Line::rot(double deg, double x_axis, double y_axis)
 	*/
 	return new Pos(result->data[0][0],result->data[1][0],result2->data[0][0],result2->data[1][0]);
 }
+
 void Lines::rotate(double degree, int axis)
 {
 	printf("rotate %f along %d axis\n", degree, axis);
@@ -435,6 +440,7 @@ void Lines::rotate(double degree, int axis)
 		Fl::check();
 	}
 }
+
 void Lines::movetoPt(double x, double y)
 {
 	moving = true;
@@ -595,6 +601,7 @@ void Lines::movetoPt(double x, double y)
 	Fl::redraw();
 	Fl::check();
 }
+
 void j1_cc_callback(Fl_Widget*, void* v) {
 	arms->rotate(1, 0);
 
@@ -653,12 +660,12 @@ void paint_callback(Fl_Widget*, void* v) {
 }
 
 int main(int argc, char **argv) {
-	Fl_Window window(10, 10, 950, 700, "PaintBot");
-
-	FillBackground fillBackground(window.w(), window.h());
+	
+	Fl_Window window(10, 10, 950, 700, "PaintBot 2.0");
+	Fl_Box drawSpace(0, 0, 950, 700, "");
+	Fl_PNG_Image backgroundPNG("background.png");
+	drawSpace.image(backgroundPNG);
 	FillBoxBackground fillBoxBackground(31, 31, 888, 486);
-	Fl_Box drawSpace(30, 30, 890, 488, ""); drawSpace.box(FL_DOWN_FRAME);
-	Fl_Box controlPanel(30, 548, 890, 122, ""); controlPanel.box(FL_DOWN_BOX);
 
 	Drawing d(1,1,4,5);
 
@@ -666,61 +673,47 @@ int main(int argc, char **argv) {
 
 	arms = new Lines();
 	
-
 	CreateCircles joint1Circ();
 
 	//CreateCircle joint2Circ(BX+arms->lines[1]->x1, BY-arms->lines[1]->y1);
-
 	//CreateCircle joint3Circ(BX+arms->lines[2]->x1, BY-arms->lines[2]->y1);
+  
+	fl_color(50, 40, 255);
 
-
-	
-
-	Fl_Box joint1_txt(80, 550, 30, 15, "Joint 1");
-	Fl_Button j1_cc(50, 570, 50, 30, "-");
-	Fl_Button j1_cl(100, 570, 50, 30, "+");
+	Fl_Button j1_cc(300, 615, 50, 30, "J1 -");
+	Fl_Button j1_cl(350, 615, 50, 30, "J1 +");
 
 	j1_cc.callback(j1_cc_callback, NULL);
 	j1_cl.callback(j1_cl_callback, NULL);
 	
-	Fl_Box joint2_txt(200, 550, 30, 15, "Joint 2");
-	Fl_Button j2_cc(170, 570, 50, 30, "-");
-	Fl_Button j2_cl(220, 570, 50, 30, "+");
+	Fl_Button j2_cc(300, 585, 50, 30, "J2 -");
+	Fl_Button j2_cl(350, 585, 50, 30, "J2 +");
 
 	j2_cc.callback(j2_cc_callback, NULL);
 	j2_cl.callback(j2_cl_callback, NULL);
 
-	Fl_Box joint3_txt(320, 550, 30, 15, "Joint 3");
-	Fl_Button j3_cc(290, 570, 50, 30, "-");
-	Fl_Button j3_cl(340, 570, 50, 30, "+");
+	Fl_Button j3_cc(300, 555, 50, 30, "J3 -");
+	Fl_Button j3_cl(350, 555, 50, 30, "J3 +");
 
 	j3_cc.callback(j3_cc_callback, NULL);
 	j3_cl.callback(j3_cl_callback, NULL);
 
-	Fl_Box X_txt(440, 550, 30, 15, "X");
-	Fl_Button x_minus(410, 570, 50, 30, "-");
-	Fl_Button x_plus(460, 570, 50, 30, "+");
+	Fl_Button x_minus(565, 585, 50, 30, "Left");
+	Fl_Button x_plus(615, 585, 50, 30, "Right");
 
 	x_plus.callback(x_plus_callback, NULL);
 	x_minus.callback(x_minus_callback, NULL);
 
-	Fl_Box Y_txt(560, 550, 30, 15, "Y");
-	Fl_Button y_minus(530, 570, 50, 30, "-");
-	Fl_Button y_plus(580, 570, 50, 30, "+");
+	Fl_Button y_minus(590, 615, 50, 30, "Down");
+	Fl_Button y_plus(590, 555, 50, 30, "Up");
 
 	y_plus.callback(y_plus_callback, NULL);
 	y_minus.callback(y_minus_callback, NULL);
 
-	Fl_Button paint(445, 610, 60, 30, "Paint");
+	Fl_Button paint(445, 585, 60, 30, "Paint");
 
 	paint.callback(paint_callback, NULL);
 
-
-
-	joint1_txt.show();
-	joint2_txt.show();
-	joint3_txt.show();
-	
 	j1_cc.show();
 	j1_cl.show();
 
@@ -733,5 +726,6 @@ int main(int argc, char **argv) {
 	paint.show();
 
 	window.show();
+
 	return Fl::run();
 }
