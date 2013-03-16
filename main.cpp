@@ -1,5 +1,5 @@
 #include <FL/Fl.H>
-#include <FL/Fl_Window.H>
+#include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Box.H>
 #include <FL/fl_draw.H>
 #include <FL/Fl_Widget.H>
@@ -9,7 +9,6 @@
 #include <vector>
 
 #define MIDDLEX 475
-
 
 struct Pair{
 	int x;
@@ -29,28 +28,7 @@ bool moving = false;
 std::vector<Pair> pairs;
 
 Lines* arms;
-/*
-class win: public Fl_Window
-{
-	int handle(int event)
-	{
-		switch(event)
-		{
-		case FL_PUSH:
-		case FL_DRAG:
-			int x=Fl::event_x()-BX;
-			int y=BY-Fl::event_y();
-			printf("pos : %d %d\n", x, y);
-			if(y>=0)
-				arms->movetoPt(x,y);
-		}
-		return 1;
-	}
-public:
-	win(int x, int y, int w, int h, const char* text) : Fl_Window(x, y, w, h, text){}
 
-};
-*/
 void Drawing::draw()
 {
 	fl_color(FL_WHITE);
@@ -95,19 +73,6 @@ void Drawing::draw()
 	fl_end_line();
 }
 
-
-// Class that fills the entire window to a single color.
-class FillBackground : public Fl_Widget {
-public:
-	FillBackground(int W, int Y) : Fl_Widget(0,0,W,Y,0) { }
-
-	void draw() {
-		fl_color(178, 207, 59); // Same color as the green on the website
-		int x1 = w();
-		int y1 = h();
-		fl_rectf(0, 0, x1, y1);
-	}
-};
 
 class FillBoxBackground : public Fl_Widget {
 public:
@@ -661,10 +626,12 @@ void paint_callback(Fl_Widget*, void* v) {
 
 int main(int argc, char **argv) {
 	
-	Fl_Window window(10, 10, 950, 700, "PaintBot 2.0");
+	Fl_Double_Window window(10, 10, 950, 692, "PaintBot 2.0");
+	
 	Fl_Box drawSpace(0, 0, 950, 700, "");
 	Fl_PNG_Image backgroundPNG("background.png");
 	drawSpace.image(backgroundPNG);
+	
 	FillBoxBackground fillBoxBackground(31, 31, 888, 486);
 
 	Drawing d(1,1,4,5);
@@ -726,6 +693,9 @@ int main(int argc, char **argv) {
 	paint.show();
 
 	window.show();
+
+	Fl_Offscreen test = fl_create_offscreen(950, 692);
+	fl_begin_offscreen(test);
 
 	return Fl::run();
 }
